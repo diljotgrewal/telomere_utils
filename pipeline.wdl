@@ -11,7 +11,11 @@ task SamtoolsCollate{
     output{
         File collated_bam = "tempdir/output.bam"
     }
-
+    runtime{
+        memory: "12 GB"
+        cpu: 1
+        walltime: "24:00"
+    }
 }
 
 
@@ -24,6 +28,11 @@ task SplitSam{
     >>>
     output{
         Array[File] bamfiles = glob("tempdir/*.sam")
+    }
+    runtime{
+        memory: "6 GB"
+        cpu: 1
+        walltime: "10:00"
     }
 }
 
@@ -46,6 +55,11 @@ task ExtractReads{
         File outbam = "output.bam"
         File outcsv = "output.cssv"
     }
+    runtime{
+        memory: "12 GB"
+        cpu: 1
+        walltime: "4:00"
+    }
 }
 
 task MergeCsv{
@@ -58,6 +72,11 @@ task MergeCsv{
     >>>
     output{
         File out_csv = "output.csv.gz"
+    }
+    runtime{
+        memory: "12 GB"
+        cpu: 1
+        walltime: "4:00"
     }
 }
 
@@ -78,6 +97,11 @@ task GetOverlap{
     output{
         File outfile = "overlapping.csv.gz"
         File bin_counts = "bin_counts.csv.gz"
+    }
+    runtime{
+        memory: "12 GB"
+        cpu: 1
+        walltime: "4:00"
     }
 }
 
