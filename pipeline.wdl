@@ -6,6 +6,7 @@ task SamtoolsCollate{
         File bamfile
     }
     command<<<
+        mkdir tempdir
         samtools collate -u ~{bamfile} tempdir/output
     >>>
     output{
