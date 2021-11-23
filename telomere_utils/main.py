@@ -12,20 +12,20 @@ def parse_args():
     extract_reads = subparsers.add_parser("extract_reads")
     extract_reads.set_defaults(which='extract_reads')
     extract_reads.add_argument(
-        'input',
+        '--input',
         help='input bam file'
     )
 
     extract_reads.add_argument(
-        'outbam',
+        '--outbam',
         help='output directory'
     )
     extract_reads.add_argument(
-        'outcsv',
+        '--outcsv',
         help='output directory'
     )
     extract_reads.add_argument(
-        'sample_id',
+        '--sample_id',
         help='output directory'
     )
     extract_reads.add_argument(
