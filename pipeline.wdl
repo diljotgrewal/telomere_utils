@@ -9,7 +9,7 @@ task SamtoolsCollate{
         samtools collate -u ~{bamfile} tempdir/output
     >>>
     output{
-        File bamfile = "tempdir/output.bam"
+        File collated_bam = "tempdir/output.bam"
     }
 
 }
@@ -106,11 +106,11 @@ workflow TelomereWorkflow{
     }
     call SplitSam as normal_split{
         input:
-        bamfile = normal_collate.bamfile
+        bamfile = normal_collate.collated_bam
     }
     call SplitSam as tumour_split{
         input:
-        bamfile = tumour_collate.bamfile
+        bamfile = tumour_collate.collated_bam
     }
 
     scatter (bamfile in  normal_split.bamfiles){
