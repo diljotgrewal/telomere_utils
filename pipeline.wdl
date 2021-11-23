@@ -96,25 +96,25 @@ workflow TelomereWorkflow{
         Int binsize = 1000
     }
 
-    task SamtoolsCollate as normal_collate{
+    call SamtoolsCollate as normal_collate{
         input:
             bamfile = normal_bam
     }
-    task SamtoolsCollate as tumour_collate{
+    call SamtoolsCollate as tumour_collate{
         input:
             bamfile = tumour_bam
     }
-    task SplitSam as normal_split{
+    call SplitSam as normal_split{
         input:
         bamfile = normal_collate.bamfile
     }
-    task SplitSam as tumour_split{
+    call SplitSam as tumour_split{
         input:
         bamfile = tumour_collate.bamfile
     }
 
     scatter (bamfile in  normal_split.bamfiles){
-        task ExtractReads as extract_normal{
+        call ExtractReads as extract_normal{
             input:
                 bamfile = bamfile,
                 sample_id = normal_sample_id,
@@ -125,7 +125,7 @@ workflow TelomereWorkflow{
     }
 
     scatter (bamfile in  tumour_split.bamfiles){
-        task ExtractReads as extract_tumour{
+        call ExtractReads as extract_tumour{
             input:
                 bamfile = bamfile,
                 sample_id = tumour_sample_id,
@@ -135,20 +135,20 @@ workflow TelomereWorkflow{
         }
     }
 
-    task MergeCsv as merge_normal{
+    call MergeCsv as merge_normal{
         input:
             inputs = extract_normal.outcsv
     }
-    task MergeCsv as merge_tumour{
+    call MergeCsv as merge_tumour{
         input:
             inputs = extract_tumour.outcsv
     }
 
-    task GetOverlap as overlap{
+    call GetOverlap as overlap{
         input:
             normal_bam = normal_bam,
-            normal_data = merge_normal.out_csv,
-            tumour_data = merge_tumour.out_csv,
+            normal_csv = merge_normal.out_csv,
+            tumour_csv = merge_tumour.out_csv,
             binsize=binsize
     }
 
