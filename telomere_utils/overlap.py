@@ -12,18 +12,18 @@ def get_chrom_lengths(bamfile):
     return lengths
 
 
-def get_overlapping_bin(bamfile, chrom, pos, winsize=1000):
+def get_overlapping_bin(bamfile, chrom, pos, binsize=1000):
     chr_lengths = get_chrom_lengths(bamfile)
 
-    start = (pos // winsize) * winsize
-    end = start + winsize
+    start = (pos // binsize) * binsize
+    end = start + binsize
     if end > chr_lengths[chrom]:
         end = chr_lengths[chrom]
 
     return (chrom, int(start), int(end))
 
 
-def build_germline_ref(bamfile, telomeres, winsize=1000):
+def build_germline_ref(bamfile, telomeres, binsize=1000):
     """
     telomere length max is 150 (read length)
     so check the bin that covers start and end of telomere
@@ -40,8 +40,8 @@ def build_germline_ref(bamfile, telomeres, winsize=1000):
             chromosome_1 = row['chromosome_1']
             telomere_start_1 = int(row['start_1'] + row['telomere_start_1'])
             telomere_end_1 = int(row['start_1'] + row['telomere_end_1'])
-            binval_start = get_overlapping_bin(bamfile, chromosome_1, telomere_start_1, winsize=winsize)
-            binval_end = get_overlapping_bin(bamfile, chromosome_1, telomere_end_1, winsize=winsize)
+            binval_start = get_overlapping_bin(bamfile, chromosome_1, telomere_start_1, binsize=binsize)
+            binval_end = get_overlapping_bin(bamfile, chromosome_1, telomere_end_1, binsize=binsize)
 
             outdata[binval_start] = 1
             outdata[binval_end] = 1
@@ -51,18 +51,16 @@ def build_germline_ref(bamfile, telomeres, winsize=1000):
             telomere_start_2 = int(row['start_2'] + row['telomere_start_2'])
             telomere_end_2 = int(row['start_2'] + row['telomere_end_2'])
 
-            binval_start = get_overlapping_bin(bamfile, chromosome_2, telomere_start_2, winsize=winsize)
-            binval_end = get_overlapping_bin(bamfile, chromosome_2, telomere_end_2, winsize=winsize)
+            binval_start = get_overlapping_bin(bamfile, chromosome_2, telomere_start_2, binsize=binsize)
+            binval_end = get_overlapping_bin(bamfile, chromosome_2, telomere_end_2, binsize=binsize)
 
             outdata[binval_start] = 1
             outdata[binval_end] = 1
 
-    print(outdata)
-
     return outdata
 
 
-def build_counts(bamfile, telomeres, output, winsize=1000):
+def build_counts(bamfile, telomeres, output, binsize=1000):
     """
     telomere length max is 150 (read length)
     so check the bin that covers start and end of telomere
@@ -82,8 +80,8 @@ def build_counts(bamfile, telomeres, output, winsize=1000):
             chromosome_1 = row['chromosome_1']
             telomere_start_1 = int(row['start_1'] + row['telomere_start_1'])
             telomere_end_1 = int(row['start_1'] + row['telomere_end_1'])
-            binval_start = get_overlapping_bin(bamfile, chromosome_1, telomere_start_1, winsize=winsize)
-            binval_end = get_overlapping_bin(bamfile, chromosome_1, telomere_end_1, winsize=winsize)
+            binval_start = get_overlapping_bin(bamfile, chromosome_1, telomere_start_1, binsize=binsize)
+            binval_end = get_overlapping_bin(bamfile, chromosome_1, telomere_end_1, binsize=binsize)
             if binval_start == binval_end:
                 outdata[binval_start] += 1
             else:
@@ -94,16 +92,16 @@ def build_counts(bamfile, telomeres, output, winsize=1000):
             chromosome_2 = row['chromosome_2']
             telomere_start_2 = int(row['start_2'] + row['telomere_start_2'])
             telomere_end_2 = int(row['start_2'] + row['telomere_end_2'])
-            binval_start = get_overlapping_bin(bamfile, chromosome_2, telomere_start_2, winsize=winsize)
-            binval_end = get_overlapping_bin(bamfile, chromosome_2, telomere_end_2, winsize=winsize)
+            binval_start = get_overlapping_bin(bamfile, chromosome_2, telomere_start_2, binsize=binsize)
+            binval_end = get_overlapping_bin(bamfile, chromosome_2, telomere_end_2, binsize=binsize)
             if binval_start == binval_end:
                 outdata[binval_start] += 1
             else:
                 outdata[binval_start] += 1
                 outdata[binval_end] += 1
 
-    outdata = []
     sorted_counts = sorted(outdata.items(), key=itemgetter(1))
+    outdata = []
     for binval, count in sorted_counts:
         chromosome, start, end = binval
         data = {
@@ -116,11 +114,13 @@ def build_counts(bamfile, telomeres, output, winsize=1000):
         if start < 10000 or end > (chr_lengths[chromosome] - 10000):
             data['at_chromosome_end'] = True
 
+        outdata.append(data)
+
     outdata = pd.DataFrame(outdata)
     outdata.to_csv(output, index=False, na_rep='NA')
 
 
-def filter_telomeres(tumour_telomeres, normal_data, output, bamfile, winsize=1000):
+def filter_telomeres(tumour_telomeres, normal_data, output, bamfile, binsize=1000):
     tumour_telomeres = pd.read_csv(tumour_telomeres)
 
     alldata = []
@@ -133,8 +133,8 @@ def filter_telomeres(tumour_telomeres, normal_data, output, bamfile, winsize=100
             telomere_start_1 = int(row['start_1'] + row['telomere_start_1'])
             telomere_end_1 = int(row['start_1'] + row['telomere_end_1'])
 
-            binval_start = get_overlapping_bin(bamfile, chromosome_1, telomere_start_1, winsize=winsize)
-            binval_end = get_overlapping_bin(bamfile, chromosome_1, telomere_end_1, winsize=winsize)
+            binval_start = get_overlapping_bin(bamfile, chromosome_1, telomere_start_1, binsize=binsize)
+            binval_end = get_overlapping_bin(bamfile, chromosome_1, telomere_end_1, binsize=binsize)
 
             if normal_data[binval_start] or normal_data[binval_end]:
                 row['germline'] = True
@@ -145,8 +145,8 @@ def filter_telomeres(tumour_telomeres, normal_data, output, bamfile, winsize=100
             telomere_start_2 = int(row['start_2'] + row['telomere_start_2'])
             telomere_end_2 = int(row['start_2'] + row['telomere_end_2'])
 
-            binval_start = get_overlapping_bin(bamfile, chromosome_2, telomere_start_2, winsize=winsize)
-            binval_end = get_overlapping_bin(bamfile, chromosome_2, telomere_end_2, winsize=winsize)
+            binval_start = get_overlapping_bin(bamfile, chromosome_2, telomere_start_2, binsize=binsize)
+            binval_end = get_overlapping_bin(bamfile, chromosome_2, telomere_end_2, binsize=binsize)
             if normal_data[binval_start] or normal_data[binval_end]:
                 row['germline'] = True
 
@@ -156,11 +156,11 @@ def filter_telomeres(tumour_telomeres, normal_data, output, bamfile, winsize=100
     alldata.to_csv(output, index=False, na_rep="NA")
 
 
-def get_overlap(bamfile, normal_telomeres, tumour_telomeres, outfile, bin_counts, winsize=1000):
+def get_overlap(bamfile, normal_telomeres, tumour_telomeres, outfile, bin_counts, binsize=1000):
     bamfile = pysam.AlignmentFile(bamfile)
 
-    normal_data = build_germline_ref(bamfile, normal_telomeres, winsize=winsize)
+    normal_data = build_germline_ref(bamfile, normal_telomeres, binsize=binsize)
 
-    filter_telomeres(tumour_telomeres, normal_data, outfile, bamfile, winsize=winsize)
+    filter_telomeres(tumour_telomeres, normal_data, outfile, bamfile, binsize=binsize)
 
-    build_counts(bamfile, outfile, bin_counts, winsize=winsize)
+    build_counts(bamfile, outfile, bin_counts, binsize=binsize)

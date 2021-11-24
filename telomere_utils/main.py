@@ -81,6 +81,12 @@ def parse_args():
         '--bin_counts',
         help='input bam file'
     )
+    get_overlap.add_argument(
+        '--binsize',
+        default=1000,
+        type=int,
+        help='input bam file'
+    )
 
     split_bam = subparsers.add_parser("split_bam")
     split_bam.set_defaults(which='split_bam')
@@ -125,6 +131,7 @@ def main():
             args['tumour_data'],
             args['output'],
             args['bin_counts'],
+            binsize = args['binsize']
         )
     if args['which'] == 'split_bam':
         split_bam(

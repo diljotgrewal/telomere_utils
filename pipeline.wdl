@@ -41,7 +41,7 @@ task SplitSam{
 task ExtractReads{
     input{
         File bamfile
-        File sample_id
+        String sample_id
         Float perc_threshold = 0.85
         Int mapping_quality = 30
         Int telomere_length_threshold = 36
@@ -55,7 +55,7 @@ task ExtractReads{
     >>>
     output{
         File outbam = "output.bam"
-        File outcsv = "output.cssv"
+        File outcsv = "output.csv"
     }
     runtime{
         memory: "12 GB"
@@ -67,13 +67,14 @@ task ExtractReads{
 task MergeCsv{
     input{
         Array[File] inputs
+        String filename_prefix
     }
     command<<<
         telomere_utils merge_files \
-        --inputs ~{sep=" "inputs} --output output.csv.gz
+        --inputs ~{sep=" "inputs} --output ~{filename_prefix}.csv.gz
     >>>
     output{
-        File out_csv = "output.csv.gz"
+        File out_csv = "~{filename_prefix}.csv.gz"
     }
     runtime{
         memory: "12 GB"
@@ -91,7 +92,7 @@ task GetOverlap{
         Int binsize = 1000
     }
     command<<<
-        telomere_util get_overlap \
+        telomere_utils get_overlap \
         --normal_bam ~{normal_bam} --normal_data ~{normal_csv} \
         --tumour_data ~{tumour_csv} --output overlapping.csv.gz \
         --bin_counts bin_counts.csv.gz --binsize ~{binsize}
@@ -163,11 +164,13 @@ workflow TelomereWorkflow{
 
     call MergeCsv as merge_normal{
         input:
-            inputs = extract_normal.outcsv
+            inputs = extract_normal.outcsv,
+            filename_prefix = "normal_telomeres"
     }
     call MergeCsv as merge_tumour{
         input:
-            inputs = extract_tumour.outcsv
+            inputs = extract_tumour.outcsv,
+            filename_prefix = "tumour_telomeress"
     }
 
     call GetOverlap as overlap{
