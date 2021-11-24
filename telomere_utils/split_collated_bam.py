@@ -32,7 +32,7 @@ def split_bam(filepath, outdir, lines_per_file=1e6):
     filenumber = 0
     lines_written = 0
 
-    currfile = getfile('outdir', filenumber, header)
+    currfile = getfile(outdir, filenumber, header)
 
     prev_read_id = None
 
@@ -58,7 +58,7 @@ def split_bam(filepath, outdir, lines_per_file=1e6):
             filenumber += 1
             lines_written = 0
             currfile.close()
-            currfile = getfile('outdir', filenumber, header)
+            currfile = getfile(outdir, filenumber, header)
             currfile.write(line)
             lines_written += 1
             prev_read_id = curr_read_id

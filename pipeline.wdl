@@ -8,9 +8,10 @@ task SamtoolsCollate{
     command<<<
         mkdir tempdir
         samtools collate -u ~{bamfile} tempdir/output
+        samtools view -h tempdir/output.bam -o tempdir/output.sam
     >>>
     output{
-        File collated_bam = "tempdir/output.bam"
+        File collated_bam = "tempdir/output.sam"
     }
     runtime{
         memory: "12 GB"
