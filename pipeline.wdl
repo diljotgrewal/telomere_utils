@@ -14,7 +14,7 @@ task SamtoolsCollate{
         File collated_bam = "tempdir/output.sam"
     }
     runtime{
-        memory: "12 GB"
+        memory: "25 GB"
         cpu: 1
         walltime: "24:00"
     }
