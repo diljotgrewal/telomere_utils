@@ -19,6 +19,7 @@ task SamtoolsCollate{
         cpu: 1
         walltime: "24:00"
         singularity: '~{singularity_image}'
+        docker: 'quay.io/wgspipelinetest/telomere_utils:v0.0.1'
     }
 }
 
@@ -39,6 +40,7 @@ task SplitSam{
         cpu: 1
         walltime: "10:00"
         singularity: '~{singularity_image}'
+        docker: 'quay.io/wgspipelinetest/telomere_utils:v0.0.1'
     }
 }
 
@@ -67,6 +69,7 @@ task ExtractReads{
         cpu: 1
         walltime: "4:00"
         singularity: '~{singularity_image}'
+        docker: 'quay.io/wgspipelinetest/telomere_utils:v0.0.1'
     }
 }
 
@@ -88,6 +91,7 @@ task MergeCsv{
         cpu: 1
         walltime: "4:00"
         singularity: '~{singularity_image}'
+        docker: 'quay.io/wgspipelinetest/telomere_utils:v0.0.1'
     }
 }
 
@@ -115,6 +119,7 @@ task GetOverlap{
         cpu: 1
         walltime: "4:00"
         singularity: '~{singularity_image}'
+        docker: 'quay.io/wgspipelinetest/telomere_utils:v0.0.1'
     }
 }
 
