@@ -99,6 +99,12 @@ def _get_csv_data(r1, r2, telo_r1, telo_r2, sample_id, bamfile):
         rend2 = r1
         rend2_telo = telo_r1
 
+    if bamfile.get_reference_name(rend1.reference_id) is None:
+        return
+
+    if bamfile.get_reference_name(rend2.reference_id) is None:
+        return
+
     data = {
         'read_id': rend1.query_name,
         'sample_id': sample_id,
@@ -146,7 +152,10 @@ def extract_telomeric_reads_and_metrics(
         outfile.write(r1)
         outfile.write(r2)
 
-        csvdata.append(_get_csv_data(r1, r2, telo_r1, telo_r2, sample_id, bamfile))
+        read_pair_data = _get_csv_data(r1, r2, telo_r1, telo_r2, sample_id, bamfile)
+
+        if read_pair_data is not None:
+            csvdata.append(read_pair_data)
 
     df = pd.DataFrame(csvdata)
 
