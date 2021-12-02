@@ -1,0 +1,5 @@
+FROM quay.io/singlecellpipelinetest/miniconda3:4.10.3
+
+RUN pip install git+https://github.com/shahcompbio/telomere_utils.git@master
+RUN pip install pandas pysam pyyaml 
+RUN apt update && apt install build-essential samtools -y && rm -rf /var/lib/apt/lists/*
