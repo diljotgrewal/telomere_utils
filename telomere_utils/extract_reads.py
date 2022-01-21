@@ -5,15 +5,7 @@ import pandas as pd
 import pysam
 
 
-def _revcomp(seq):
-    seq1 = seq.translate(str.maketrans("AGCTagct", "TCGAtcga"))
-    seq2 = seq1[::-1]
-    return seq2
-
-
-def _find_telomere(query_sequence):
-    kmers = ['TTAGGG', 'TCAGGG', 'TGAGGG', 'TTGGGG']
-
+def _find_telomere_end_in_seq(query_sequence, kmers):
     tot_len = 0
     end_pos = None
     i = 0
@@ -28,40 +20,51 @@ def _find_telomere(query_sequence):
     return tot_len, end_pos
 
 
-def _get_telomeric_pos(read, perc_threshold=0.85, mapping_quality=30, telomere_length_threshold=36):
-    # good mapping qual reads cannot be telomeric
-    if read.mapping_quality > mapping_quality:
-        return
-
-    query_sequence = read.query_sequence
-    if read.is_reverse:
-        query_sequence = _revcomp(query_sequence)
-
-    tot_len, telomere_end = _find_telomere(query_sequence)
-
+def _keep_telomere(telo_len, end_pos, perc_threshold=0.85, length_threshold=36):
     # no telomere found
-    if telomere_end is None:
-        return
+    if end_pos is None:
+        return False
 
     # telomere not long enough
-    if tot_len < telomere_length_threshold:
-        return
+    if telo_len < length_threshold:
+        return False
 
-    percentage = tot_len / telomere_end
-
+    percentage = telo_len / end_pos
     # most of the telomeric section is not telomeric enough
     if percentage < perc_threshold:
-        return
+        return False
 
-    # we revcomped the read when calculating positions. so count it in reverse here
-    if read.is_reverse:
-        end = len(query_sequence)
-        start = end - telomere_end
-    else:
-        start = 0
-        end = telomere_end
+    return True
 
-    return [start, end]
+
+def _find_all_telomeres(read, perc_threshold=0.85, mapping_quality=30, length_threshold=36):
+    if read.mapping_quality > mapping_quality:
+        return []
+
+    kmers = ['TTAGGG', 'TCAGGG', 'TGAGGG', 'TTGGGG']
+    kmers_revcomp = ['CCCTAA', 'CCCTGA', 'CCCTCA', 'CCCCAA']
+
+    query_sequence = read.query_sequence
+
+    positions = []
+
+    telo_len, telo_end = _find_telomere_end_in_seq(query_sequence, kmers)
+    if _keep_telomere(telo_len, telo_end, perc_threshold=perc_threshold, length_threshold=length_threshold):
+        positions.append((0, telo_end, False))
+
+    telo_len, telo_end = _find_telomere_end_in_seq(query_sequence, kmers_revcomp)
+    if _keep_telomere(telo_len, telo_end, perc_threshold=perc_threshold, length_threshold=length_threshold):
+        positions.append((0, telo_end, True))
+
+    telo_len, telo_end = _find_telomere_end_in_seq(query_sequence[::-1], kmers)
+    if _keep_telomere(telo_len, telo_end, perc_threshold=perc_threshold, length_threshold=length_threshold):
+        positions.append((len(query_sequence) - telo_end, len(query_sequence), False))
+
+    telo_len, telo_end = _find_telomere_end_in_seq(query_sequence[::-1], kmers_revcomp)
+    if _keep_telomere(telo_len, telo_end, perc_threshold=perc_threshold, length_threshold=length_threshold):
+        positions.append((len(query_sequence) - telo_end, len(query_sequence), True))
+
+    return positions
 
 
 def _get_read_pairs(bamfile):
@@ -86,42 +89,24 @@ def _get_read_pairs(bamfile):
             yield al, read_data[key]
 
 
-def _get_csv_data(r1, r2, telo_r1, telo_r2, sample_id, bamfile):
-    if r1.is_read1:
-        rend1 = r1
-        rend1_telo = telo_r1
-        rend2 = r2
-        rend2_telo = telo_r2
-    else:
-        assert r2.is_read1
-        rend1 = r2
-        rend1_telo = telo_r2
-        rend2 = r1
-        rend2_telo = telo_r1
-
-    if bamfile.get_reference_name(rend1.reference_id) is None:
+def _get_csv_data(read, telomere, sample_id, bamfile):
+    if bamfile.get_reference_name(read.reference_id) is None:
         return
 
-    if bamfile.get_reference_name(rend2.reference_id) is None:
+    if bamfile.get_reference_name(read.reference_id) is None:
         return
 
     data = {
-        'read_id': rend1.query_name,
+        'read_id': read.query_name,
         'sample_id': sample_id,
-
-        'strand_1': '-' if rend1.is_reverse else '+',
-        'chromosome_1': bamfile.get_reference_name(rend1.reference_id),
-        'start_1': rend1.reference_start,
-        'end_1': rend1.reference_end,
-        'telomere_start_1': None if rend1_telo is None else rend1_telo[0],
-        'telomere_end_1': None if rend1_telo is None else rend1_telo[1],
-
-        'strand_2': '-' if rend2.is_reverse else '+',
-        'chromosome_2': bamfile.get_reference_name(rend2.reference_id),
-        'start_2': rend2.reference_start,
-        'end_2': rend2.reference_end,
-        'telomere_start_2': None if rend2_telo is None else rend2_telo[0],
-        'telomere_end_2': None if rend2_telo is None else rend2_telo[1],
+        'strand': '-' if read.is_reverse else '+',
+        'chromosome': bamfile.get_reference_name(read.reference_id),
+        'start': read.reference_start,
+        'end': read.reference_end,
+        'telomere_start': telomere[0],
+        'telomere_end': telomere[1],
+        'reverse_complement': telomere[2],
+        'readend': '1' if read.is_read1 else '2'
     }
 
     return data
@@ -129,7 +114,7 @@ def _get_csv_data(r1, r2, telo_r1, telo_r2, sample_id, bamfile):
 
 def extract_telomeric_reads_and_metrics(
         infile, outbam, outcsv, sample_id, perc_threshold=0.85, mapping_quality=30,
-        telomere_length_threshold=36
+        length_threshold=36
 ):
     bamfile = pysam.AlignmentFile(infile, "rb")
     outfile = pysam.AlignmentFile(outbam, "wb", template=bamfile)
@@ -137,33 +122,40 @@ def extract_telomeric_reads_and_metrics(
     csvdata = []
 
     for r1, r2 in _get_read_pairs(bamfile):
-        telo_r1 = _get_telomeric_pos(
+        telo_r1 = _find_all_telomeres(
             r1, perc_threshold=perc_threshold, mapping_quality=mapping_quality,
-            telomere_length_threshold=telomere_length_threshold
+            length_threshold=length_threshold
         )
-        telo_r2 = _get_telomeric_pos(
+        telo_r2 = _find_all_telomeres(
             r2, perc_threshold=perc_threshold, mapping_quality=mapping_quality,
-            telomere_length_threshold=telomere_length_threshold
+            length_threshold=length_threshold
         )
 
-        if telo_r1 is None and telo_r2 is None:
+        if len(telo_r1) == 0 and len(telo_r2) == 0:
             continue
 
         outfile.write(r1)
         outfile.write(r2)
 
-        read_pair_data = _get_csv_data(r1, r2, telo_r1, telo_r2, sample_id, bamfile)
+        for telomere in telo_r1:
+            assert None not in telomere
+            read_pair_data = _get_csv_data(r1, telomere, sample_id, bamfile)
+            if read_pair_data is not None:
+                csvdata.append(read_pair_data)
 
-        if read_pair_data is not None:
-            csvdata.append(read_pair_data)
+        for telomere in telo_r2:
+            assert None not in telomere
+            read_pair_data = _get_csv_data(r2, telomere, sample_id, bamfile)
+            if read_pair_data is not None:
+                csvdata.append(read_pair_data)
 
     df = pd.DataFrame(csvdata)
 
     if df.empty:
         columns = [
-            'read_id', 'sample_id',
-            'strand_1', 'chromosome_1', 'start_1', 'end_1', 'telomere_start_1', 'telomere_end_1',
-            'strand_2', 'chromosome_2', 'start_2', 'end_2', 'telomere_start_2', 'telomere_end_2',
+            'read_id', 'sample_id', 'strand', 'chromosome',
+            'start', 'end', 'telomere_start', 'telomere_end',
+            'reverse_complement', 'readend'
         ]
         df = pd.DataFrame(columns=columns)
 
@@ -224,7 +216,7 @@ def main():
         args['sample_id'],
         perc_threshold=args['perc_threshold'],
         mapping_quality=args['mapping_quality'],
-        telomere_length_threshold=args['telomere_length_threshold']
+        length_threshold=args['telomere_length_threshold']
     )
 
 
