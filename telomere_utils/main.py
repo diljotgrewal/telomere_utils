@@ -117,7 +117,7 @@ def main():
             args['sample_id'],
             perc_threshold=args['perc_threshold'],
             mapping_quality=args['mapping_quality'],
-            telomere_length_threshold=args['telomere_length_threshold']
+            length_threshold=args['telomere_length_threshold']
         )
     if args['which'] == 'merge_files':
         merge(
