@@ -1,11 +1,7 @@
 
-
 # telomere utils  
   
-  
-  
-  
-#### Search Space for telomeres  
+### Search Space for telomeres  
   
   
 Grid - Search is done with the following parameters:  
@@ -14,7 +10,7 @@ Grid - Search is done with the following parameters:
 |Parameter|Setting 1|Setting 2|  
 | -- | -- | -- |  
 | Search Direction| Start -> End| End -> start|
-| Kmers | ['TTAGGG', 'TCAGGG', 'TGAGGG', 'TTGGGG']| ['CCCTAA', 'CCCTGA', 'CCCTCA', 'CCCCAA']|
+| Kmers | ['TTAGGG', 'TCAGGG', 'TGAGGG', 'TTGGGG']| ['CCCTAA', 'CCCTGA', 'CCCTCA', 'CCCCAA'] (reverse complemented)|
 | Read direction | Left -> Right | Right -> Left|
 
 
@@ -55,21 +51,21 @@ CCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACC
 
 the read matches reverse complemented k-mer `CCCCAA`  from beginning to end except for 4 bases at the very end.
 
-###### Use case 1:
+##### Use case 1:
 *No Telomere Found*
 
-###### Use case 2:
+##### Use case 2:
 *No Telomere Found*
 
-###### Use case 3:
+##### Use case 3:
 Since search starts from the beginning, start is asssumed to be 0
 
 First Telomere: [0,5]
 Last Telomere: [90,95]
 
-start and end positions of telomere: 0,96
+start and end positions of telomere: **0,96**
 
-###### Use case 4:
+##### Use case 4:
 First we reverse the read:
 ```
 TCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCC
@@ -78,15 +74,15 @@ Since search starts from the beginning, start is always 0
 First Telomere: [6,11]
 Last Telomere: [90,95]
 
-reported start and end positions of telomere: 0,96
+reported start and end positions of telomere: **0,96**
 
-###### Use case 5:
+##### Use case 5:
 *No Telomere Found*
 
-###### Use case 6:
+##### Use case 6:
 *No Telomere Found*
 
-###### Use case 7:
+##### Use case 7:
 We're going to match from end of read to start. 
 
 End is always 100  in this case (end of read)
@@ -95,10 +91,10 @@ The first telomere we see is [90,95]
 The last telomere we see is [0,5]
 
 so start will be set to 0 ( start of last telomere seen)
-reported start and end positions of telomere: 0,100
+reported start and end positions of telomere: **0,100**
 
 
-###### Use case 8:
+##### Use case 8:
 First we reverse the read:
 ```
 TCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCC
@@ -108,7 +104,7 @@ End is always 100  in this case (end of read)
 The first telomere we see is [90,95]
 The last telomere we see is [6,11]
 
-reported start and end positions of telomere: 6,100
+reported start and end positions of telomere: **6,100**
 
 
 
