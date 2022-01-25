@@ -51,13 +51,13 @@ CCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACC
 
 the read matches reverse complemented k-mer `CCCCAA`  from beginning to end except for 4 bases at the very end.
 
-##### Use case 1:
+#### Use case 1:
 *No Telomere Found*
 
-##### Use case 2:
+#### Use case 2:
 *No Telomere Found*
 
-##### Use case 3:
+#### Use case 3:
 Since search starts from the beginning, start is asssumed to be 0
 
 First Telomere: [0,5]
@@ -65,7 +65,7 @@ Last Telomere: [90,95]
 
 start and end positions of telomere: **0,96**
 
-##### Use case 4:
+#### Use case 4:
 First we reverse the read:
 ```
 TCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCC
@@ -76,13 +76,13 @@ Last Telomere: [90,95]
 
 reported start and end positions of telomere: **0,96**
 
-##### Use case 5:
+#### Use case 5:
 *No Telomere Found*
 
-##### Use case 6:
+#### Use case 6:
 *No Telomere Found*
 
-##### Use case 7:
+#### Use case 7:
 We're going to match from end of read to start. 
 
 End is always 100  in this case (end of read)
@@ -94,7 +94,7 @@ so start will be set to 0 ( start of last telomere seen)
 reported start and end positions of telomere: **0,100**
 
 
-##### Use case 8:
+#### Use case 8:
 First we reverse the read:
 ```
 TCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCCAACCCC
