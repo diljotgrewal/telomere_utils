@@ -109,3 +109,14 @@ The first telomere we see is [90,95]
 The last telomere we see is [6,11]
 
 reported start and end positions of telomere: 6,100
+
+
+
+Final output:
+```
+read_id,sample_id,strand,chromosome,start,end,telomere_start,telomere_end,reverse_complemented_kmers,reversed_read,match_beginning_of_read,readend
+RID,SA,-,1,10255,10333,0,96,True,False,True,2
+RID,SA,-,1,10255,10333,0,96,True,True,True,2
+RID,SA,-,1,10255,10333,0,100,True,False,False,2
+RID,SA,-,1,10255,10333,6,100,True,True,False,2
+```
