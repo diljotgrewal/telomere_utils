@@ -35,7 +35,7 @@ def _find_telomere_end_in_seq_backwards(query_sequence, kmers):
 
 def _keep_telomere(start_pos, end_pos, perc_threshold=0.85, length_threshold=36):
     # no telomere found
-    if end_pos is None:
+    if end_pos is None or start_pos is None:
         return False
 
     telo_len = end_pos - start_pos
