@@ -228,7 +228,7 @@ workflow TelomereWorkflow{
 
     call MergeCsv as merge_bin_counts{
         input:
-            inputs = extract_tumour.bin_counts,
+            inputs = overlap.bin_counts,
             filename_prefix = "tumour_telomeres_bin_counts",
             singularity_image = singularity_image
     }
