@@ -4,6 +4,7 @@ from telomere_utils.merge import merge
 from telomere_utils.overlap import get_overlap
 from telomere_utils.split_collated_bam import split_bam
 
+
 def parse_args():
     parser = argparse.ArgumentParser()
 
@@ -87,6 +88,10 @@ def parse_args():
         type=int,
         help='input bam file'
     )
+    get_overlap.add_argument(
+        '--chromosome',
+        help='input bam file'
+    )
 
     split_bam = subparsers.add_parser("split_bam")
     split_bam.set_defaults(which='split_bam')
@@ -103,7 +108,6 @@ def parse_args():
 
     args = vars(args)
     return args
-
 
 
 def main():
@@ -131,13 +135,11 @@ def main():
             args['tumour_data'],
             args['output'],
             args['bin_counts'],
-            binsize = args['binsize']
+            chromosome=args['chromosome'],
+            binsize=args['binsize']
         )
     if args['which'] == 'split_bam':
         split_bam(
             args['infile'],
             args['outdir']
         )
-
-
-

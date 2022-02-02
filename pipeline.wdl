@@ -4,6 +4,7 @@ version 1.0
 task SamtoolsCollate{
     input{
         File bamfile
+        File baifile
         String? singularity_image
     }
     command<<<
@@ -99,8 +100,10 @@ task MergeCsv{
 task GetOverlap{
     input{
         File normal_bam
+        File normal_bai
         File normal_csv
         File tumour_csv
+        String chromosome
         Int binsize = 1000
         String? singularity_image
     }
@@ -108,7 +111,8 @@ task GetOverlap{
         telomere_utils get_overlap \
         --normal_bam ~{normal_bam} --normal_data ~{normal_csv} \
         --tumour_data ~{tumour_csv} --output overlapping.csv.gz \
-        --bin_counts bin_counts.csv.gz --binsize ~{binsize}
+        --bin_counts bin_counts.csv.gz --binsize ~{binsize} \
+        --chromosome ~{chromosome}
     >>>
     output{
         File outfile = "overlapping.csv.gz"
@@ -129,9 +133,12 @@ task GetOverlap{
 workflow TelomereWorkflow{
     input{
         File normal_bam
+        File normal_bai
         File tumour_bam
+        File tumour_bai
         String normal_sample_id
         String tumour_sample_id
+        Array[String] chromosomes = ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','X','Y']
         Float perc_threshold = 0.85
         Int mapping_quality = 30
         Int telomere_length_threshold = 36
@@ -142,11 +149,13 @@ workflow TelomereWorkflow{
     call SamtoolsCollate as normal_collate{
         input:
             bamfile = normal_bam,
+            baifile = normal_bai,
             singularity_image = singularity_image
     }
     call SamtoolsCollate as tumour_collate{
         input:
             bamfile = tumour_bam,
+            baifile = tumour_bai,
             singularity_image = singularity_image
     }
     call SplitSam as normal_split{
@@ -197,20 +206,38 @@ workflow TelomereWorkflow{
             singularity_image = singularity_image
     }
 
-    call GetOverlap as overlap{
+    scatter(chrom in chromosomes){
+        call GetOverlap as overlap{
+            input:
+                normal_bam = normal_bam,
+                normal_bai = normal_bai,
+                normal_csv = merge_normal.out_csv,
+                tumour_csv = merge_tumour.out_csv,
+                binsize=binsize,
+                chromosome = chrom,
+                singularity_image = singularity_image
+        }
+    }
+
+    call MergeCsv as merge_overlaps{
         input:
-            normal_bam = normal_bam,
-            normal_csv = merge_normal.out_csv,
-            tumour_csv = merge_tumour.out_csv,
-            binsize=binsize,
+            inputs = overlap.outfile,
+            filename_prefix = "telomeres_overlap",
+            singularity_image = singularity_image
+    }
+
+    call MergeCsv as merge_bin_counts{
+        input:
+            inputs = extract_tumour.bin_counts,
+            filename_prefix = "tumour_telomeres_bin_counts",
             singularity_image = singularity_image
     }
 
     output{
         File tumour_data = merge_tumour.out_csv
         File normal_data = merge_normal.out_csv
-        File overlap_data = overlap.outfile
-        File bin_counts = overlap.bin_counts
+        File overlap_data = merge_overlaps.out_csv
+        File bin_counts = merge_bin_counts.out_csv
     }
 
 }
