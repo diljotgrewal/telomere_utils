@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from collections import defaultdict
+
 import argparse
 import pandas as pd
 import pysam
@@ -8,37 +10,43 @@ import pysam
 def _find_telomere_end_in_seq_forwards(query_sequence, kmers):
     end_pos = None
     i = 0
+    telo_len = 0
+    kmer_counts = defaultdict(int)
 
     while i < (len(query_sequence) - 5):
         if any(tr == query_sequence[i:(i + 6)] for tr in kmers):
+            kmer_counts[query_sequence[i:(i + 6)]] += 1
             end_pos = i + 6
             i += 6
+            telo_len += 6
         else:
             i += 1
 
-    return 0, end_pos
+    return 0, end_pos, telo_len, kmer_counts
 
 
 def _find_telomere_end_in_seq_backwards(query_sequence, kmers):
     end_pos = None
     i = len(query_sequence)
+    telo_len = 0
+    kmer_counts = defaultdict(int)
 
     while i > 5:
         if any(tr == query_sequence[(i - 6):i] for tr in kmers):
+            kmer_counts[query_sequence[(i - 6):i]] += 1
             end_pos = i - 6
             i -= 6
+            telo_len += 6
         else:
             i -= 1
 
-    return end_pos, len(query_sequence)
+    return end_pos, len(query_sequence), telo_len, kmer_counts
 
 
-def _keep_telomere(start_pos, end_pos, perc_threshold=0.85, length_threshold=36):
+def _keep_telomere(start_pos, end_pos, telo_len, perc_threshold=0.85, length_threshold=36):
     # no telomere found
     if end_pos is None or start_pos is None:
         return False
-
-    telo_len = end_pos - start_pos
 
     # telomere not long enough
     if telo_len < length_threshold:
@@ -63,53 +71,63 @@ def _find_all_telomeres(read, perc_threshold=0.85, mapping_quality=30, length_th
 
     positions = []
 
-    telo_start, telo_end = _find_telomere_end_in_seq_forwards(query_sequence, kmers)
-    if _keep_telomere(telo_start, telo_end, perc_threshold=perc_threshold, length_threshold=length_threshold):
+    telo_start, telo_end, telo_len, kmer_counts = _find_telomere_end_in_seq_forwards(query_sequence, kmers)
+    if _keep_telomere(telo_start, telo_end, telo_len, perc_threshold=perc_threshold, length_threshold=length_threshold):
         positions.append(
-            {'start': telo_start, 'end': telo_end, 'kmers_revcomp': False, 'read_rev': False, 'forwards': True}
+            {'start': telo_start, 'end': telo_end, 'kmers_revcomp': False, 'read_rev': False, 'forwards': True,
+             'kmer_counts': kmer_counts}
         )
 
-    telo_start, telo_end = _find_telomere_end_in_seq_forwards(query_sequence, kmers_revcomp)
-    if _keep_telomere(telo_start, telo_end, perc_threshold=perc_threshold, length_threshold=length_threshold):
+    telo_start, telo_end, telo_len, kmer_counts = _find_telomere_end_in_seq_forwards(query_sequence, kmers_revcomp)
+    if _keep_telomere(telo_start, telo_end, telo_len, perc_threshold=perc_threshold, length_threshold=length_threshold):
         positions.append(
-            {'start': telo_start, 'end': telo_end, 'kmers_revcomp': True, 'read_rev': False, 'forwards': True}
+            {'start': telo_start, 'end': telo_end, 'kmers_revcomp': True, 'read_rev': False, 'forwards': True,
+             'kmer_counts': kmer_counts}
         )
 
-    telo_start, telo_end = _find_telomere_end_in_seq_forwards(query_sequence[::-1], kmers)
-    if _keep_telomere(telo_start, telo_end, perc_threshold=perc_threshold, length_threshold=length_threshold):
+    telo_start, telo_end, telo_len, kmer_counts = _find_telomere_end_in_seq_forwards(query_sequence[::-1], kmers)
+    if _keep_telomere(telo_start, telo_end, telo_len, perc_threshold=perc_threshold, length_threshold=length_threshold):
         positions.append(
-            {'start': telo_start, 'end': telo_end, 'kmers_revcomp': False, 'read_rev': True, 'forwards': True}
+            {'start': telo_start, 'end': telo_end, 'kmers_revcomp': False, 'read_rev': True, 'forwards': True,
+             'kmer_counts': kmer_counts}
         )
 
-    telo_start, telo_end = _find_telomere_end_in_seq_forwards(query_sequence[::-1], kmers_revcomp)
-    if _keep_telomere(telo_start, telo_end, perc_threshold=perc_threshold, length_threshold=length_threshold):
+    telo_start, telo_end, telo_len, kmer_counts = _find_telomere_end_in_seq_forwards(query_sequence[::-1],
+                                                                                     kmers_revcomp)
+    if _keep_telomere(telo_start, telo_end, telo_len, perc_threshold=perc_threshold, length_threshold=length_threshold):
         positions.append(
-            {'start': telo_start, 'end': telo_end, 'kmers_revcomp': True, 'read_rev': True, 'forwards': True}
+            {'start': telo_start, 'end': telo_end, 'kmers_revcomp': True, 'read_rev': True, 'forwards': True,
+             'kmer_counts': kmer_counts}
         )
 
     ## backwards
-    telo_start, telo_end = _find_telomere_end_in_seq_backwards(query_sequence, kmers)
-    if _keep_telomere(telo_start, telo_end, perc_threshold=perc_threshold, length_threshold=length_threshold):
+    telo_start, telo_end, telo_len, kmer_counts = _find_telomere_end_in_seq_backwards(query_sequence, kmers)
+    if _keep_telomere(telo_start, telo_end, telo_len, perc_threshold=perc_threshold, length_threshold=length_threshold):
         positions.append(
-            {'start': telo_start, 'end': telo_end, 'kmers_revcomp': False, 'read_rev': False, 'forwards': False}
+            {'start': telo_start, 'end': telo_end, 'kmers_revcomp': False, 'read_rev': False, 'forwards': False,
+             'kmer_counts': kmer_counts}
         )
 
-    telo_start, telo_end = _find_telomere_end_in_seq_backwards(query_sequence, kmers_revcomp)
-    if _keep_telomere(telo_start, telo_end, perc_threshold=perc_threshold, length_threshold=length_threshold):
+    telo_start, telo_end, telo_len, kmer_counts = _find_telomere_end_in_seq_backwards(query_sequence, kmers_revcomp)
+    if _keep_telomere(telo_start, telo_end, telo_len, perc_threshold=perc_threshold, length_threshold=length_threshold):
         positions.append(
-            {'start': telo_start, 'end': telo_end, 'kmers_revcomp': True, 'read_rev': False, 'forwards': False}
+            {'start': telo_start, 'end': telo_end, 'kmers_revcomp': True, 'read_rev': False, 'forwards': False,
+             'kmer_counts': kmer_counts}
         )
 
-    telo_start, telo_end = _find_telomere_end_in_seq_backwards(query_sequence[::-1], kmers)
-    if _keep_telomere(telo_start, telo_end, perc_threshold=perc_threshold, length_threshold=length_threshold):
+    telo_start, telo_end, telo_len, kmer_counts = _find_telomere_end_in_seq_backwards(query_sequence[::-1], kmers)
+    if _keep_telomere(telo_start, telo_end, telo_len, perc_threshold=perc_threshold, length_threshold=length_threshold):
         positions.append(
-            {'start': telo_start, 'end': telo_end, 'kmers_revcomp': False, 'read_rev': True, 'forwards': False}
+            {'start': telo_start, 'end': telo_end, 'kmers_revcomp': False, 'read_rev': True, 'forwards': False,
+             'kmer_counts': kmer_counts}
         )
 
-    telo_start, telo_end = _find_telomere_end_in_seq_backwards(query_sequence[::-1], kmers_revcomp)
-    if _keep_telomere(telo_start, telo_end, perc_threshold=perc_threshold, length_threshold=length_threshold):
+    telo_start, telo_end, telo_len, kmer_counts = _find_telomere_end_in_seq_backwards(query_sequence[::-1],
+                                                                                      kmers_revcomp)
+    if _keep_telomere(telo_start, telo_end, telo_len, perc_threshold=perc_threshold, length_threshold=length_threshold):
         positions.append(
-            {'start': telo_start, 'end': telo_end, 'kmers_revcomp': True, 'read_rev': True, 'forwards': False}
+            {'start': telo_start, 'end': telo_end, 'kmers_revcomp': True, 'read_rev': True, 'forwards': False,
+             'kmer_counts': kmer_counts}
         )
 
     return positions
@@ -144,6 +162,8 @@ def _get_csv_data(read, telomere, sample_id, bamfile):
     if bamfile.get_reference_name(read.reference_id) is None:
         return
 
+    all_kmers = ['TTAGGG', 'TCAGGG', 'TGAGGG', 'TTGGGG', 'CCCTAA', 'CCCTGA', 'CCCTCA', 'CCCCAA']
+
     data = {
         'read_id': read.query_name,
         'sample_id': sample_id,
@@ -158,6 +178,9 @@ def _get_csv_data(read, telomere, sample_id, bamfile):
         'match_beginning_of_read': telomere['forwards'],
         'readend': '1' if read.is_read1 else '2'
     }
+
+    for kmer in all_kmers:
+        data[kmer] = telomere['kmer_counts'][kmer]
 
     return data
 
