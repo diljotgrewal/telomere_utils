@@ -30,7 +30,7 @@ def build_germline_ref(bamfile, telomeres, chromosome=None, binsize=1000):
     keeping a boolean per bin as proof of telomere
     """
 
-    telomeres = pd.read_csv(telomeres)
+    telomeres = pd.read_csv(telomeres, dtype={'chromosome': 'str'})
 
     if chromosome:
         telomeres = telomeres[telomeres['chromosome'] == chromosome]
@@ -103,7 +103,7 @@ def build_counts(bamfile, telomeres, output, binsize=1000):
 
 
 def filter_telomeres(tumour_telomeres, normal_data, output, bamfile, chromosome=None, binsize=1000):
-    tumour_telomeres = pd.read_csv(tumour_telomeres)
+    tumour_telomeres = pd.read_csv(tumour_telomeres, dtype={'chromosome': 'str'})
 
     if chromosome:
         tumour_telomeres = tumour_telomeres[tumour_telomeres['chromosome'] == chromosome]
