@@ -130,9 +130,9 @@ def filter_telomeres(tumour_telomeres, normal_data, output, bamfile, chromosome=
 
     if alldata.empty:
         columns = [
-            'read_id', 'sample_id', 'strand', 'chromosome', 'start', 'end',
-            'telomere_start', 'telomere_end', 'reverse_complement', 'readend',
-            'germline'
+            'read_id', 'sample_id', 'strand', 'chromosome', 'start', 'end', 'telomere_start', 'telomere_end',
+            'reverse_complemented_kmers', 'reversed_read', 'match_beginning_of_read', 'readend', 'TTAGGG', 'TCAGGG',
+            'TGAGGG', 'TTGGGG', 'CCCTAA', 'CCCTGA', 'CCCTCA', 'CCCCAA', 'germline'
         ]
         alldata = pd.DataFrame(columns=columns)
 
