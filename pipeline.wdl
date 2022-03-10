@@ -68,7 +68,7 @@ task ExtractReads{
     runtime{
         memory: "12 GB"
         cpu: 1
-        walltime: "4:00"
+        walltime: "24:00"
         singularity: '~{singularity_image}'
         docker: 'quay.io/wgspipelinetest/telomere_utils:v0.0.1'
     }
@@ -88,7 +88,7 @@ task MergeCsv{
         File out_csv = "~{filename_prefix}.csv.gz"
     }
     runtime{
-        memory: "12 GB"
+        memory: "60 GB"
         cpu: 1
         walltime: "4:00"
         singularity: '~{singularity_image}'
@@ -119,9 +119,9 @@ task GetOverlap{
         File bin_counts = "bin_counts.csv.gz"
     }
     runtime{
-        memory: "12 GB"
+        memory: "60 GB"
         cpu: 1
-        walltime: "4:00"
+        walltime: "24:00"
         singularity: '~{singularity_image}'
         docker: 'quay.io/wgspipelinetest/telomere_utils:v0.0.1'
     }
@@ -139,9 +139,12 @@ workflow TelomereWorkflow{
         String normal_sample_id
         String tumour_sample_id
         Array[String] chromosomes = ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','X','Y']
-        Float perc_threshold = 0.85
-        Int mapping_quality = 30
-        Int telomere_length_threshold = 36
+        Float tumour_perc_threshold = 0.85
+        Int tumour_mapping_quality = 30
+        Int tumour_telomere_length_threshold = 36
+        Float normal_perc_threshold = 0.85
+        Int normal_mapping_quality = 30
+        Int normal_telomere_length_threshold = 36
         Int binsize = 1000
         String? singularity_image
     }
@@ -174,9 +177,9 @@ workflow TelomereWorkflow{
             input:
                 bamfile = bamfile,
                 sample_id = normal_sample_id,
-                perc_threshold=perc_threshold,
-                mapping_quality=mapping_quality,
-                telomere_length_threshold=telomere_length_threshold,
+                perc_threshold=normal_perc_threshold,
+                mapping_quality=normal_mapping_quality,
+                telomere_length_threshold=normal_telomere_length_threshold,
                 singularity_image = singularity_image
         }
     }
@@ -186,9 +189,9 @@ workflow TelomereWorkflow{
             input:
                 bamfile = bamfile,
                 sample_id = tumour_sample_id,
-                perc_threshold=perc_threshold,
-                mapping_quality=mapping_quality,
-                telomere_length_threshold=telomere_length_threshold,
+                perc_threshold=tumour_perc_threshold,
+                mapping_quality=tumour_mapping_quality,
+                telomere_length_threshold=tumour_telomere_length_threshold,
                 singularity_image = singularity_image
         }
     }
